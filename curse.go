@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kless/term"
+	"github.com/pkg/term"
 	"golang.org/x/sys/unix"
 )
 
@@ -21,7 +21,7 @@ type Cursor struct {
 	StartingPosition Position
 	Style
 
-	terminal *term.Terminal
+	terminal *term.Term
 }
 
 type Position struct {
@@ -41,7 +41,7 @@ func New() (*Cursor, error) {
 	c := &Cursor{}
 	c.Position.X, c.StartingPosition.X = col, col
 	c.Position.Y, c.StartingPosition.Y = line, line
-	c.terminal, err = term.New()
+	c.terminal, err = term.Open("/bin/stty")
 	return c, err
 }
 
@@ -131,7 +131,7 @@ func (c *Cursor) SetDefaultStyle() *Cursor {
 }
 
 func (c *Cursor) ModeRaw() *Cursor {
-	_ = c.terminal.RawMode()
+	_ = c.terminal.SetRaw()
 
 	return c
 }
@@ -171,12 +171,12 @@ func fallback_SetCookedMode() {
 
 func GetCursorPosition() (col int, line int, err error) {
 	// set terminal to raw mode and back
-	t, err := term.New()
+	t, err := term.Open("/bin/stty")
 	if err != nil {
 		fallback_SetRawMode()
 		defer fallback_SetCookedMode()
 	} else {
-		t.RawMode()
+		t.SetRaw()
 		defer t.Restore()
 	}
 
